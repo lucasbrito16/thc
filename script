@@ -1,0 +1,175 @@
+#AUTOMACAO
+
+clear
+$maxUptime=30
+
+#$statusSuporte = @('Suporte ativo', 'Suporte de Segurança')
+$winSrv2022= @((Get-Date -Month 10 -Day 13 -Year 2026), (Get-Date -Month 10 -Day 14 -Year 2031))
+$winSrv2019= @((Get-Date -Month 1 -Day 9 -Year 2024), (Get-Date -Month 11 -Day 9 -Year 2029))
+$winSrv2016= @((Get-Date -Month 1 -Day 11 -Year 2022), (Get-Date -Month 12 -Day 1 -Year 2027))
+$winSrv2012r2= @((Get-Date -Month 10 -Day 9 -Year 2018), (Get-Date -Month 10 -Day 10 -Year 2023))
+$winSrv2012= @((Get-Date -Month 10 -Day 9 -Year 2018), (Get-Date -Month 10 -Day 10 -Year 2023))
+
+$DataAtual=Get-Date
+
+try{
+
+    # VERIFICACAO VERSAO DE SISTEMA OPERACIONAL
+
+    ## Win Srv 2022
+    if ($DataAtual -lt  $winSrv2022[0]){
+        $statusWinSrv2022='Suporte ativo'
+        Write-Output $statusWinSrv2022
+    }
+    elseif ($DataAtual -gt  $winSrv2022[0] -and $DataAtual -lt  $winSrv2022[1] ){
+        $statusWinSrv2022='Suporte de Segurança'
+        Write-Output $statusWinSrv2022
+    }
+    else{
+        $statusWinSrv2022='Backlevel, e é recomendado atualizar o sistema para uma versão mais recente'
+        Write-Output $statusWinSrv2022
+    }
+
+## Win Srv 2019
+if ($DataAtual -lt  $winSrv2019[0]){
+    $statusWinSrv2019='Suporte ativo'
+    Write-Output $statusWinSrv2019
+}
+elseif ($DataAtual -gt  $winSrv2019[0] -and $DataAtual -lt  $winSrv2019[1] ){
+    $statusWinSrv2019='Suporte de Segurança'
+    Write-Output $statusWinSrv2019
+}
+else{
+    $statusWinSrv2019='Backlevel, e é recomendado atualizar o sistema para uma versão mais recente'
+    Write-Output $statusWinSrv2019
+}
+
+## Win Srv 2016
+if ($DataAtual -lt  $winSrv2016[0]){
+    $statusWinSrv2016='Suporte ativo'
+    Write-Output $statusWinSrv2016
+}
+elseif ($DataAtual -gt  $winSrv2016[0] -and $DataAtual -lt  $winSrv2016[1] ){
+    $statusWinSrv2016='Suporte de Segurança'
+    Write-Output $statusWinSrv2016
+}
+else{
+    $statusWinSrv2016='Backlevel, e é recomendado atualizar o sistema para uma versão mais recente'
+    Write-Output $statusWinSrv2016
+}
+
+## Win Srv 2012r2
+if ($DataAtual -lt  $winSrv2012r2[0]){
+    $statusWinSrv2012r2='Suporte ativo'
+    Write-Output $statusWinSrv2012r2
+}
+elseif ($DataAtual -gt  $winSrv2012r2[0] -and $DataAtual -lt  $winSrv2012r2[1] ){
+    $statusWinSrv2012r2='Suporte de Segurança'
+    Write-Output $statusWinSrv2012r2
+}
+else{
+    $statusWinSrv2012r2='Backlevel, e é recomendado atualizar o sistema para uma versão mais recente'
+    Write-Output $statusWinSrv2012r2
+}
+
+## Win Srv 2012
+if ($DataAtual -lt  $winSrv2012[0]){
+    $statusWinSrv2012='Suporte ativo'
+    Write-Output $statusWinSrv2012
+}
+elseif ($DataAtual -gt  $winSrv2012[0] -and $DataAtual -lt  $winSrv2012[1] ){
+    $statusWinSrv2012='Suporte de Segurança'
+    Write-Output $statusWinSrv2012
+}
+else{
+    $statusWinSrv2012='Backlevel, e é recomendado atualizar o sistema para uma versão mais recente'
+    Write-Output $statusWinSrv2012
+}
+
+    $versaoSO=(Get-CimInstance Win32_OperatingSystem).Version
+
+    if ($versaoSO -Match "Server 2022"){Write-Output "Versão do sistema é $versaoSO e está em $statusWinSrv2022."}
+    elseif ($versaoSO -Match "Server 2019"){Write-Output "Versão do sistema é $versaoSO e está em $statusWinSrv2019."}
+    elseif ($versaoSO -Match "Server 2016"){Write-Output "Versão do sistema é $versaoSO e está em $statusWinSrv2016."}
+    elseif ($versaoSO -Match "Server 2012-R2"){Write-Output "Versão do sistema é $versaoSO e está em $statusWinSrv2012r2."}
+    elseif ($versaoSO -Match "Server 2012"){Write-Output "Versão do sistema é $versaoSO e está em $statusWinSrv2012."}
+    elseif ($versaoSO -Match "10.*.*"){Write-Output "Versão do sistema é Windows 10, e é recomendável alterar para o Windows Server!"}
+    else {Write-Output "Versão do sistema é $versaoSO e está em Backlevel. É recomendado atualizar o sistema para uma versão mais recente."}
+
+
+    # VERIFICACAO DE UPTIME
+
+    $bootUptime = (Get-CimInstance -ClassName Win32_OperatingSystem).LastBootUpTime
+    $CurrentDate = Get-Date
+    $uptime = $CurrentDate - $bootUptime
+    Write-Output "O Servidor está ligado há $($uptime.days) dias"
+
+    if ($uptime.days -ge $maxUptime){
+        Write-Output "É recomendável reiniciar o servidor, segundo recomendação da Microsoft (maximo de $maxUptime dias ligados)"
+    }
+
+
+    # VERIFICACAO DE SAUDE DOS DISCOS
+
+    $lista_disco=@()
+    $contador_erro=@()
+    $contador_sucesso=@()
+    $lista_disco+=$(Get-WmiObject Win32_LogicalDisk | ? {($_.FreeSpace -ne $null)}).DeviceID
+    $threshold=50
+
+    #Write-Output $lista_disco[1]
+
+    $trace=""
+
+    foreach($nomeDisco_Id in $lista_disco){
+
+        $diskId = $nomeDisco_Id
+
+        if ($diskId -match '[A-Z]:'){
+            
+            $info = Get-WmiObject Win32_LogicalDisk | Where-Object DeviceID -eq $diskId
+            
+            
+            if($info){
+                $espaco_livre=[Math]::Round((($info.FreeSpace)/($info.Size)*100),2)
+                $espaco_ocupado = (100-$espaco_livre)
+                if($espaco_ocupado -lt $threshold){
+                    $contador_sucesso += "1"
+                    Write-Output "O Servidor está com $espaco_ocupado % ocupado do disco $nomeDisco_Id"
+                }
+                else{
+                    $contador_erro += "3"
+                    $trace += "O servidor tem apenas $espaco_livre % livres no disco $nomeDisco_Id. É recomendável verificar"
+                    Write-Output "O servidor tem apenas $espaco_livre % livres no disco $nomeDisco_Id. É recomendável verificar"
+                }
+            }
+        
+        }
+    }
+
+
+    # USO DE MEMORIA
+
+ $CompObject =  Get-WmiObject -Class WIN32_OperatingSystem
+ $AvgMemory=0
+ $Memory=0
+ for ($i=0; $i -lt 5; $i++){
+ 
+ $Memory += ((($CompObject.TotalVisibleMemorySize - $CompObject.FreePhysicalMemory)*100)/ $CompObject.TotalVisibleMemorySize)
+ 
+ Start-Sleep -s 5
+
+ }
+
+ $AvgMemory=($Memory/5)
+
+ Write-Host "Uso médio de memória nos ultimos 25 segundos: $AvgMemory % "
+        
+
+
+        
+    
+}
+catch{}
+
+
